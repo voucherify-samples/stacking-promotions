@@ -431,7 +431,7 @@ if (window.location.href === "http://localhost:3000/checkout.html") {
                 }
             })
             .catch(error => {
-                promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
+                completeOrderButton.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
             });
     });
 }

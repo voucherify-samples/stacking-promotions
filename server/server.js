@@ -145,12 +145,6 @@ app.post("/redeem-stackable", (req, res) => {
     promotionStackable.order.amount = subtotalAmount * 100;
     promotionStackable.redeemables = promoItemsArray;
 
-    if (!promoItemsArray) {
-        return res.send({
-            message: "No vouchers applied"
-        });
-    }
-
     client.redemptions.redeemStackable(promotionStackable).then(response => {
         if (response.parent_redemption.result === "SUCCESS") {
             return res.status(200).send({
