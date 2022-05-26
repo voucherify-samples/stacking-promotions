@@ -381,7 +381,7 @@ const innerSummedValues = (discountValueSpan, subtotalValueSpan, allDiscountsVal
         subtotalValueSpan.innerHTML = `$${values[0].subtotal}`;
         const grandTotalValueSpan = document.querySelector(".grand-total span");
         shippingValueSpan.innerHTML = `${item.id === "FREE SHIPPING" ? item.discount : shippingValueSpan.innerHTML}`;
-        grandTotalValueSpan.innerHTML = `$${(values[0].subtotal - values[0].discount + parseInt(shippingValueSpan.innerHTML)).toFixed(2)}`;
+        grandTotalValueSpan.innerHTML = `$${(values[0].subtotal - values[0].discount + parseFloat(shippingValueSpan.innerHTML)).toFixed(2)}`;
     });
     shippingValueSpan.innerHTML = "$" + shippingValueSpan.innerHTML;
 };
