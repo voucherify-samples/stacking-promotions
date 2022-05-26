@@ -259,7 +259,7 @@
     flex-wrap: wrap;
     font-size: 13px;
     font-style: italic;
-    height: 50px;
+    height: auto;
     gap: 0 10px;
     color: gray;
   }
