@@ -80,22 +80,21 @@ const incrementQuantity = () => {
             items[index].quantity = items[index].quantity + 1;
             quantityInputs[index].value = items[index].quantity;
             summaryPrices();
-            const subtotalToGranTotal = document.getElementById("subtotal").innerHTML.replace("$", " ");
+            const subtotalToGrandTotal = document.getElementById("subtotal").innerHTML.replace("$", " ");
             voucherValue.value = "";
             const orderAmount = document.getElementById("grand-total").innerHTML.replace("$", " ");
-            validateTier(orderAmount).then(response => {
+            validateCode(" ", orderAmount).then(response => {
                 const promoTier = response.redeemables[0];
                 if (promoTier.status === "APPLICABLE") {
-                    const promotions = response.order.total_applied_discount_amount / 100;
+                    const redeemablesArray = response.redeemables;
+                    const promotions = redeemablesArray.map(item => item.order.total_applied_discount_amount).reduce((prev, curr) => prev + curr, 0) / 100;
                     summedValuesToCheckout[0].discount = promotions;
-                    summedValuesToCheckout[0].subtotal = subtotalToGranTotal;
+                    summedValuesToCheckout[0].subtotal = subtotalToGrandTotal;
                     promoItemToStorage(promoTier);
                     sessionStorage.setItem("values", JSON.stringify(summedValuesToCheckout));
-                    const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-                    const promoItems = values[0].promoItems;
-                    promotionsWrapper.innerHTML = `<h4>Promotions:</h4> ${promoItems.map((item, index) => {
-                        return `<div class="promotion-holder index=${index}"><h5>${item.object}<span>${item.discount.toFixed(2)}$ OFF</span></h5>
-                        <span>-$${item.discount.toFixed(2)}</span></div>`;
+                    promotionsWrapper.innerHTML = `<h4>Promotions:</h4> ${redeemablesArray.map((item, index) => {
+                        return `<div class="promotion-holder index=${index}"><h5>${item.object}<span>${(item.order.total_applied_discount_amount / 100).toFixed(2)}$ OFF</span></h5>
+                        <span>-$${(item.order.total_applied_discount_amount / 100).toFixed(2)}</span></div>`;
                     }).join("")}`;
                     allDiscountsSpan.innerHTML = `-$${promotions.toFixed(2)}`;
                     grandTotal = addProductPrices(items) - promotions;
@@ -119,29 +118,38 @@ const decrementQuantity = () => {
             summaryPrices();
             voucherValue.value = "";
             const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-            let promotions = values[0].discount;
-            const subtotalToGranTotal = document.getElementById("subtotal").innerHTML.replace("$", " ");
-            grandTotalSpan.innerHTML = `$${(subtotalToGranTotal - promotions).toFixed(2)}`;
+            const subtotalToGrandTotal = document.getElementById("subtotal").innerHTML.replace("$", " ");
+            grandTotalSpan.innerHTML = `$${(subtotalToGrandTotal - promotions).toFixed(2)}`;
             const orderAmount = document.getElementById("grand-total").innerHTML.replace("$", " ");
-            if (orderAmount < 40) {
-                promotions = values[0].discount - 10;
-                grandTotalSpan.innerHTML = `$${(subtotalToGranTotal - promotions).toFixed(2)}`;
-                const filtered = values[0].promoItems.filter(item => {
-                    return item.id !== "promo_0ONBGj3HnpivcjhrwZZt4zTG";
-                });
-                summedValuesToCheckout[0].promoItems = filtered;
-                sessionStorage.setItem("values", JSON.stringify(summedValuesToCheckout));
-                const summedValues = JSON.parse(sessionStorage.getItem("values") || "[]");
-                const promoItems = summedValues[0].promoItems;
-                promotionsWrapper.innerHTML = `<h4>Promotions:</h4> ${promoItems.map((item, index) => {
-                    return `<div class="promotion-holder index=${index}"><h5>${item.object}<span>${item.discount.toFixed(2)}$ OFF</span></h5>
-                    <span>-$${item.discount.toFixed(2)}</span></div>`;
-                }).join("")}`;
-            }
-            if (orderAmount < 0) {
-                grandTotalSpan.innerHTML = "$0.00";
-            }
+            validateCode(" ", orderAmount).then(response => {
+                const promoTier = response.redeemables[0];
+                if (promoTier.status === "INAPPLICABLE" && values.length !== 0) {
+                    const filtered = values[0].promoItems.filter(item => {
+                        return item.id !== "promo_0ONBGj3HnpivcjhrwZZt4zTG";
+                    });
+                    summedValuesToCheckout[0].promoItems = filtered;
+                    sessionStorage.setItem("values", JSON.stringify(summedValuesToCheckout));
+                    const summedValues = JSON.parse(sessionStorage.getItem("values") || "[]");
+                    const promoItems = summedValues[0].promoItems ? summedValues[0].promoItems : "";
+                    allDiscountsSpan.innerHTML = `-$${(summedValues[0].discount - 10).toFixed(2)}`;
+                    grandTotalSpan.innerHTML = `$${(subtotalToGrandTotal - parseFloat(allDiscountsSpan.innerHTML.replace("-$", ""))).toFixed(2)}`;
+                    promotionsWrapper.innerHTML = `<h4>Promotions:</h4> ${promoItems.map((item, index) => {
+                        return `<div class="promotion-holder index=${index}"><h5>${item.object}<span>${item.discount.toFixed(2)}$ OFF</span></h5>
+                        <span>-$${item.discount.toFixed(2)}</span></div>`;
+                    }).join("")}`;
+                }
+            }).catch(error => {
+                promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
+            });
             allDiscountsSpan.innerHTML = `-$${(promotions).toFixed(2)}`;
+            if (orderAmount < 0) {
+                sessionStorage.removeItem("values");
+                grandTotalSpan.innerHTML = "$0.00";
+                promotionsWrapper.innerHTML = "<h4>Promotions</h4>";
+                allDiscountsSpan.innerHTML = "$0.00";
+                promotions = 0;
+                removePromoFromBackend([]);
+            }
         });
     });
 };
@@ -192,31 +200,6 @@ const validateCode = async (voucherCode, orderAmount) => {
     }
 };
 
-const redeemCode = async (promoItemsArray, subtotalAmount) => {
-    const response = await fetch("/redeem-stackable", {
-        method : "POST",
-        headers: {
-            //prettier-ignore
-            "Accept"      : "application/json",
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ promoItemsArray, subtotalAmount }),
-    });
-
-    const data = await response.json();
-    if (response.status === 200) {
-        return data;
-    }
-
-    if (response.status === 404) {
-        return Promise.reject(data);
-    }
-
-    if (response.status === 400) {
-        return Promise.reject(data);
-    }
-};
-
 const removePromoFromBackend = async emptyArray => {
     const response = await fetch("/remove-promo", {
         method : "POST",
@@ -227,31 +210,6 @@ const removePromoFromBackend = async emptyArray => {
         body: JSON.stringify({ emptyArray }),
     });
     return response;
-};
-
-const validateTier = async orderAmount => {
-    const response = await fetch("/validate-tier", {
-        method : "POST",
-        headers: {
-            "Accept"      : "application/json",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ orderAmount }),
-    });
-
-    const data = await response.json();
-
-    if (response.status === 200) {
-        return data;
-    }
-
-    if (response.status === 404) {
-        return Promise.reject(data);
-    }
-
-    if (response.status === 400) {
-        return Promise.reject(data);
-    }
 };
 
 const summedVouchersAfterValidate = result => {
@@ -276,16 +234,19 @@ const promoItemToStorage = item => {
     });
     summedValuesToCheckout[0].promoItems = filtered;
 
+    const order = item.order.total_applied_discount_amount / 100;
+
     summedValuesToCheckout[0].promoItems.push({
         "object"  : item.object,
-        "discount": item.order.total_applied_discount_amount / 100,
+        "discount": order ? order : "",
         "id"      : item.id
     });
 };
 
 if (checkoutButton) {
     checkoutButton.addEventListener("click", e => {
-        if (sessionStorage.length === 0) {
+        const values = JSON.parse(sessionStorage.getItem("values") || "[]");
+        if (values.length === 0) {
             e.preventDefault();
             promotionHolder.innerHTML = "<h5 id=\"error-message\">Please validate voucher code</h5>";
         } else {
@@ -352,86 +313,11 @@ if (buttonValidateCode) {
     });
 }
 
-const innerSummedProducts = summedProducts => {
-    const products = JSON.parse(sessionStorage.getItem("products") || "[]");
-    summedProducts.innerHTML = `${products.map((item, index) => {
-        if (item.quantity === 0) {
-            return;
-        } else {
-            return `<div class="each-product" key=${index}>
-                <img src="${item.src}" />
-                <div class="each-product-name">
-                    <h6>${item.productName}</h6>
-                    <p>Quantity ${item.quantity}</p>
-                </div>
-                <span>$${item.price}</span>
-            </div>`;
-        }
-    }).join("")}`;
-};
-
-const innerSummedValues = (discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, couponValueSpan, shippingValueSpan, couponsWrapper) => {
-    const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-    couponsWrapper.innerHTML = `${values[0].promoItems.map((item, index) => {
-        return `<h5 class="coupon" index=${index}">${item.object}&nbsp;<span class="coupon-value">(-$${item.discount})</span></h5>`;
-    }).join("")}`;
-    values[0].promoItems.map(item => {
-        discountValueSpan.innerHTML = `-$${values[0].discount}`;
-        allDiscountsValueSpan.innerHTML = `-$${values[0].discount}`;
-        subtotalValueSpan.innerHTML = `$${values[0].subtotal}`;
-        const grandTotalValueSpan = document.querySelector(".grand-total span");
-        shippingValueSpan.innerHTML = `${item.id === "FREE SHIPPING" ? item.discount : shippingValueSpan.innerHTML}`;
-        grandTotalValueSpan.innerHTML = `$${(values[0].subtotal - values[0].discount + parseFloat(shippingValueSpan.innerHTML)).toFixed(2)}`;
-    });
-    shippingValueSpan.innerHTML = "$" + shippingValueSpan.innerHTML;
-};
-
-
 if (window.location.href === "http://localhost:3000/" || window.location.href === "http://localhost:3000/index.html") {
     window.addEventListener("load", () => {
         summaryPrices();
         removePromoFromBackend([]);
         sessionStorage.removeItem("values");
         sessionStorage.removeItem("products");
-    });
-}
-
-if (window.location.href === "http://localhost:3000/checkout.html") {
-    const summedProducts = document.querySelector(".summed-products");
-    const couponValueSpan = document.querySelector(".coupon");
-    const discountValueSpan = document.querySelector(".discount-value span");
-    const subtotalValueSpan = document.querySelector(".subtotal span");
-    const allDiscountsValueSpan = document.querySelector(".all-discounts span");
-    const shippingValueSpan = document.querySelector(".shipping span");
-    const completeOrderButton = document.querySelector(".nav-buttons button");
-    const couponsWrapper = document.querySelector(".coupons");
-
-    document.getElementById("ephone").value = "voucherify@sample.io";
-    document.getElementById("fullname").value = "Jack Smith";
-    document.getElementById("company").value = "Voucherify";
-    document.getElementById("adress").value = "Magic Street 10";
-    document.getElementById("postal").value = "11-130";
-    document.getElementById("city").value = "Warsaw";
-
-    innerSummedValues(discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, couponValueSpan, shippingValueSpan, couponsWrapper);
-    innerSummedProducts(summedProducts);
-
-    const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-    const promoItemsArray = values[0].promoItems;
-    const subtotalAmount = values[0].subtotal;
-
-    completeOrderButton.addEventListener("click", e => {
-        e.preventDefault();
-        redeemCode(promoItemsArray, subtotalAmount)
-            .then(result => {
-                if (result.status === "SUCCESS") {
-                    setTimeout(() => {
-                        completeOrderButton.innerHTML = "Order completed";
-                    }, 1000);
-                }
-            })
-            .catch(error => {
-                completeOrderButton.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
-            });
     });
 }
