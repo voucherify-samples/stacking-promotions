@@ -47,36 +47,6 @@ app.post("/remove-promo", (req, res) => {
     promotionStackable.redeemables = emptyArray;
 });
 
-app.post("/validate-tier", (req, res) => {
-    const orderAmount = req.body.orderAmount * 100;
-    promotionStackable.order.amount = orderAmount;
-
-    const filtered = promotionStackable.redeemables.filter(item => {
-        return item.id !== promotionTier.id;
-    });
-    promotionStackable.redeemables = filtered;
-
-    promotionStackable.redeemables.unshift(promotionTier);
-
-    client.validations.validateStackable(promotionStackable).then(response => {
-        if (response.valid) {
-            return res.status(200).send({
-                redeemables: response.redeemables,
-                order      : response.order
-            });
-        } else {
-            return res.status(400).send({
-                status: response.redeemables[0].status
-            });
-        }
-    }).catch(() => {
-        return res.status(404).send({
-            status : "error",
-            message: "Validate is not possible"
-        });
-    });
-});
-
 app.post("/validate-stackable", (req, res) => {
     const voucherCode = req.body.voucherCode;
     const orderAmount = req.body.orderAmount * 100;
@@ -93,13 +63,15 @@ app.post("/validate-stackable", (req, res) => {
     });
     promotionStackable.redeemables = filtered;
 
-    if (orderAmount > 4000) {
+    if (orderAmount < 4000 && voucherCode.length > 1) {
+        console.log("true");
+    } else {
         promotionStackable.redeemables.unshift(promotionTier);
     }
 
     const validateStackable = () => {
         client.validations.validateStackable(promotionStackable).then(response => {
-            if (response.valid) {
+            if (response) {
                 return res.status(200).send({
                     redeemables: response.redeemables,
                     order      : response.order
@@ -117,26 +89,29 @@ app.post("/validate-stackable", (req, res) => {
             });
         });
     };
-
-    client.validations.validate(voucherCode, { "customer": customer, "order": { amount: orderAmount } }).then(response => {
-        if (response.valid) {
-            promotionStackable.redeemables.push({
-                "object": "voucher",
-                "id"    : voucherCode
-            });
-            validateStackable();
-        } else {
-            return res.status(404).send({
+    if (voucherCode === " ") {
+        validateStackable();
+    } else {
+        client.validations.validate(voucherCode, { "customer": customer, "order": { amount: orderAmount } }).then(response => {
+            if (response.valid) {
+                promotionStackable.redeemables.push({
+                    "object": "voucher",
+                    "id"    : voucherCode
+                });
+                validateStackable();
+            } else {
+                return res.status(404).send({
+                    status : "error",
+                    message: "Voucher not found"
+                });
+            }
+        }).catch(() => {
+            return res.status(400).send({
                 status : "error",
-                message: "Voucher not found"
+                message: "Voucher incorrect"
             });
-        }
-    }).catch(() => {
-        return res.status(400).send({
-            status : "error",
-            message: "Voucher incorrect"
         });
-    });
+    }
 });
 
 app.post("/redeem-stackable", (req, res) => {
