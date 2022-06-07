@@ -35,10 +35,10 @@ window.addEventListener("load", () => {
             discountValueSpan.innerHTML = `-$${(values.discount).toFixed(2)}`;
             allDiscountsValueSpan.innerHTML = `-$${(values.discount).toFixed(2)}`;
             subtotalValueSpan.innerHTML = `$${values.subtotal}`;
-            const grandTotalValueSpan = document.querySelector(".grand-total span");
             shippingValueSpan.innerHTML = `${item.id === "FREE SHIPPING" ? item.discount : shippingValueSpan.innerHTML}`;
-            grandTotalValueSpan.innerHTML = `$${(values.subtotal - values.discount + parseFloat(shippingValueSpan.innerHTML)).toFixed(2)}`;
         });
+        const grandTotalValueSpan = document.querySelector(".grand-total span");
+        grandTotalValueSpan.innerHTML = `$${(values.subtotal - values.discount + parseFloat(shippingValueSpan.innerHTML)).toFixed(2)}`;
         shippingValueSpan.innerHTML = "$" + shippingValueSpan.innerHTML;
     };
 
@@ -61,10 +61,8 @@ window.addEventListener("load", () => {
     };
 
     const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-    let promoItemsArray = values.promoItems;
-    const subtotalAmount = values.subtotal;
-    promotionStackable.order.amount = subtotalAmount * 100;
-    promotionStackable.redeemables = promoItemsArray;
+    promotionStackable.order.amount = values.subtotal * 100;
+    promotionStackable.redeemables = values.promoItems;
 
     innerSummedValues(discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, shippingValueSpan, couponsWrapper);
     innerSummedProducts(summedProducts);
