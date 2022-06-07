@@ -375,6 +375,6 @@ if (buttonValidateCode) {
 
 
 window.addEventListener("load", () => {
-    sessionStorage.removeItem("values");
-    sessionStorage.removeItem("products");
+    window.sessionStorage.removeItem("values");
+    window.sessionStorage.removeItem("products");
 });
