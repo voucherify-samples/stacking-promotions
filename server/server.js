@@ -37,11 +37,9 @@ app.post("/validate-promotion", (req, res) => {
     const stackableObject = req.body.promotionStackable;
 
     client.promotions.validate({ customer: stackableObject.customer, order: { amount: stackableObject.order.amount } }).then(response => {
-        if (response) {
-            res.status(200).send(response.promotions);
-        }
+        return res.status(200).send(response.promotions);
     }).catch(() => {
-        res.status(404).send({
+        return res.status(404).send({
             status : "error",
             message: "Validate promotion is not possible"
         });
@@ -58,12 +56,10 @@ app.post("/validate-stackable", (req, res) => {
                 order      : response.order
             });
         }
-        if (!response.valid) {
-            return res.status(400).send({
-                status : "error",
-                message: "Validate is not possible or voucher is not incorrect"
-            });
-        }
+        return res.status(400).send({
+            status : "error",
+            message: "Validate is not possible or voucher is not incorrect"
+        });
     }).catch(() => {
         return res.status(404).send({
             status : "error",

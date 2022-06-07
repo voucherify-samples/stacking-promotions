@@ -10,7 +10,7 @@ const grandTotalSpan = document.getElementById("grand-total");
 const voucherForm = document.querySelector(".voucher-input-and-button-holder form");
 
 
-let items = [
+const items = [
     {
         productName       : "Johan & Nystrom Caravan",
         productDescription: "20 oz bag",
@@ -88,38 +88,36 @@ const decrementButtons = document.querySelectorAll(".decrement");
 
 const incrementQuantity = () => {
     incrementButtons.forEach((button, index) => {
-        button.addEventListener("dblclick", () => {
-            button.disabled = true;
-        });
         button.addEventListener("click", () => {
+            button.disabled = true;
             items[index].quantity = items[index].quantity + 1;
             quantityInputs[index].value = items[index].quantity;
             summaryPrices();
-            const subtotalToGrandTotal = document.getElementById("subtotal").innerHTML.replace("$", " ");
             voucherValue.value = "";
             const subtotal = document.getElementById("subtotal").innerHTML.replace("$", "");
             const filtered = promotionStackable.redeemables.filter(item => {
-                return item.object !== "promotion_tier";
+                return item.object !== "promotion_tier" && item.id !== undefined;
             });
             promotionStackable.redeemables = filtered;
             summedValuesToCheckout.promoItems = filtered;
             promotionStackable.order.amount = (subtotal * 100).toFixed(2);
             validatePromotion(promotionStackable).then(response => {
                 if (response.length === 0) {
+                    button.disabled = false;
                     return;
                 }
                 const responsePromoTier = { id: response[0]?.id, object: response[0]?.object, discount: response[0]?.applied_discount_amount / 100 };
-                responsePromoTier.id && promotionStackable.redeemables.unshift(responsePromoTier);
-                button.disabled = false;
+                responsePromoTier && promotionStackable.redeemables.unshift(responsePromoTier);
                 validateCode(promotionStackable).then(response => {
+                    button.disabled = false;
                     if (response.redeemables[0].status === "APPLICABLE") {
                         const redeemablesArray = response.redeemables;
                         const promotions = redeemablesArray.reduce((sum, item) => {
-                            sum = + item.order.total_discount_amount / 100;
+                            sum =+ item.order.total_discount_amount / 100;
                             return sum;
                         }, 0);
                         summedValuesToCheckout.discount = promotions;
-                        summedValuesToCheckout.subtotal = subtotalToGrandTotal;
+                        summedValuesToCheckout.subtotal = subtotal;
                         summedValuesToCheckout.promoItems.push(responsePromoTier);
                         renderPromoVouchers(redeemablesArray);
                         allDiscountsSpan.innerHTML = `-$${promotions.toFixed(2)}`;
@@ -146,10 +144,8 @@ const renderPromoVouchers = redeemablesArray => {
 
 const decrementQuantity = () => {
     decrementButtons.forEach((button, index) => {
-        button.addEventListener("dblclick", () => {
-            button.disabled = true;
-        });
         button.addEventListener("click", () => {
+            button.disabled = true;
             if (items[index].quantity < 1) { return; }
             items[index].quantity = items[index].quantity - 1;
             quantityInputs[index].value = items[index].quantity;
@@ -169,19 +165,20 @@ const decrementQuantity = () => {
                     promotionStackable.redeemables = [];
                     allDiscountsSpan.innerHTML = "n/a";
                     grandTotalSpan.innerHTML = `$${subtotal}`;
+                    button.disabled = false;
                 }
-                const responsePromoTier = { id: response[0]?.id, object: response[0]?.object, discount: response[0]?.applied_discount_amount / 100 };
-                responsePromoTier.id && promotionStackable.redeemables.unshift(responsePromoTier);
-                button.disabled = false;
+                const responsePromoTier = { id: response[0]?.id, object: response[0]?.object };
+                responsePromoTier.id !== undefined && promotionStackable.redeemables.unshift(responsePromoTier);
                 validateCode(promotionStackable).then(response => {
+                    button.disabled = false;
                     const redeemablesArray = response.redeemables;
                     const promotions = redeemablesArray.reduce((sum, item) => {
-                        sum = + item.order.total_discount_amount / 100;
+                        sum =+ item.order.total_discount_amount / 100;
                         return sum;
                     }, 0);
                     summedValuesToCheckout.discount = promotions;
                     summedValuesToCheckout.subtotal = subtotal;
-                    summedValuesToCheckout.promoItems.push(responsePromoTier);
+                    responsePromoTier.id && summedValuesToCheckout.promoItems.push(responsePromoTier);
                     allDiscountsSpan.innerHTML = `-$${(promotions).toFixed(2)}`;
                     grandTotalSpan.innerHTML = `$${(subtotal - promotions).toFixed(2)}`;
                     renderPromoVouchers(redeemablesArray);
@@ -321,7 +318,7 @@ const validateVoucher = () => {
     }
 
     const filtered = promotionStackable.redeemables.filter(item => {
-        return item.object !== "promotion_tier" && item.id !== voucherCode;
+        return item.object !== "promotion_tier" && item.id !== voucherCode && item.discount !== null;
     });
     promotionStackable.redeemables = filtered;
 
@@ -344,11 +341,11 @@ const validateVoucher = () => {
             });
         }
     }).then(() => {
-        validateCode(promotionStackable).then(
+        return validateCode(promotionStackable).then(
             response => {
                 const result = response.redeemables[response.redeemables.length - 1];
                 if (result.status === "APPLICABLE") {
-                    const discount = result.order.total_applied_discount_amount / 100;
+                    const discount = result?.order?.total_applied_discount_amount / 100;
                     promotionStackable.redeemables[promotionStackable.redeemables.length - 1].discount = discount;
                     summedVouchersAfterValidate(response);
                 }
