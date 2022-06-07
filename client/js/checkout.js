@@ -1,6 +1,5 @@
 window.addEventListener("load", () => {
     const summedProducts = document.querySelector(".summed-products");
-    const couponValueSpan = document.querySelector(".coupon");
     const discountValueSpan = document.querySelector(".discount-value span");
     const subtotalValueSpan = document.querySelector(".subtotal span");
     const allDiscountsValueSpan = document.querySelector(".all-discounts span");
@@ -27,7 +26,7 @@ window.addEventListener("load", () => {
         redeemables: []
     };
 
-    const innerSummedValues = (discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, couponValueSpan, shippingValueSpan, couponsWrapper) => {
+    const innerSummedValues = (discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, shippingValueSpan, couponsWrapper) => {
         const values = JSON.parse(sessionStorage.getItem("values") || "[]");
         couponsWrapper.innerHTML = `${values.promoItems.map((item, index) => {
             return `<h5 class="coupon" index=${index}">${item.object}&nbsp;<span class="coupon-value">(-$${item.discount})</span></h5>`;
@@ -67,7 +66,7 @@ window.addEventListener("load", () => {
     promotionStackable.order.amount = subtotalAmount * 100;
     promotionStackable.redeemables = promoItemsArray;
 
-    innerSummedValues(discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, couponValueSpan, shippingValueSpan, couponsWrapper);
+    innerSummedValues(discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, shippingValueSpan, couponsWrapper);
     innerSummedProducts(summedProducts);
 
 
