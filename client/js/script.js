@@ -373,10 +373,8 @@ if (buttonValidateCode) {
     });
 }
 
-if (window.location.href === "http://localhost:3000/" || window.location.href === "http://localhost:3000/index.html") {
-    window.addEventListener("load", () => {
-        summaryPrices();
-        sessionStorage.removeItem("values");
-        sessionStorage.removeItem("products");
-    });
-}
+
+window.addEventListener("load", () => {
+    sessionStorage.removeItem("values");
+    sessionStorage.removeItem("products");
+});

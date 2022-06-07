@@ -128,6 +128,9 @@ label > select {
     -webkit-appearance: none;
 }
 
+#countries {
+    cursor: pointer;
+}
 
 .countries {
     position: relative;
