@@ -7,7 +7,7 @@ The demo is running with a [Sandbox project](https://docs.voucherify.io/docs/tes
 
 ``Hot Promotion`` - tier 1: $10 off with $40+ order, tier 2: $20 off with $80+
 
-``BLCKFRDY`` ``FREE-ARABICA-NGCXu`` ``HAPPY-ORDERyra`` ``GIFT-AeJ1nlqXRo9szSwF`` ``HAPPY-ORDER11T`` ``HAPPY-ORDERxq7`` ``FREE-SHIPPING``
+``BLCKFRDY`` ``HAPPY-ORDERyra`` ``50%UPTO100`` ``HAPPY-ORDER11T`` ``50%OFF`` ``HAPPY-ORDERxq7``
 
 This sample calls two endpoints:
 
