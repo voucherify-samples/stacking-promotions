@@ -352,6 +352,7 @@ label > select {
     border: 1px solid #213473;
     border-radius: 5px;
     font-size: 12px;
+    text-transform: capitalize;
 }
 
 .coupon::before {

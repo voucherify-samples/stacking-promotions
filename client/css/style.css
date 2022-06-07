@@ -357,6 +357,7 @@
     justify-content: space-between;
     align-items: center;
     margin: 0;
+    text-transform: capitalize;
   }
   
   .promotion-holder h5::before {
@@ -535,6 +536,7 @@
   #error-message {
     background: #f0c4c4;
     border: 1px solid #732121;
+    text-transform: none;
   }
 
   .bad-request {
