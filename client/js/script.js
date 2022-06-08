@@ -103,17 +103,15 @@ const incrementQuantity = () => {
             promotionStackable.order.amount = (subtotal * 100).toFixed(2);
             validatePromotion(promotionStackable).then(response => {
                 if (response.length === 0) {
-                    button.disabled = false;
                     return;
                 }
                 const responsePromoTier = { id: response[0]?.id, object: response[0]?.object, discount: response[0]?.applied_discount_amount / 100 };
                 responsePromoTier && promotionStackable.redeemables.unshift(responsePromoTier);
-                validateCode(promotionStackable).then(response => {
-                    button.disabled = false;
+                return validateCode(promotionStackable).then(response => {
                     if (response.redeemables[0].status === "APPLICABLE") {
                         const redeemablesArray = response.redeemables;
                         const promotions = redeemablesArray.reduce((sum, item) => {
-                            sum =+ item.order.total_discount_amount / 100;
+                            sum += item.order.total_applied_discount_amount / 100;
                             return sum;
                         }, 0);
                         summedValuesToCheckout.discount = promotions;
@@ -124,11 +122,11 @@ const incrementQuantity = () => {
                         grandTotal = addProductPrices(items) - promotions;
                         grandTotalSpan.innerHTML = `$${grandTotal.toFixed(2)}`;
                     }
-                }).catch(error => {
-                    promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
                 });
             }).catch(error => {
                 promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
+            }).finally(() => {
+                button.disabled = false;
             });
         });
     });
@@ -150,7 +148,6 @@ const decrementQuantity = () => {
             items[index].quantity = items[index].quantity - 1;
             quantityInputs[index].value = items[index].quantity;
             summaryPrices();
-            promotions = summedValuesToCheckout.discount;
             const subtotal = document.getElementById("subtotal").innerHTML.replace("$", "");
             voucherValue.value = "";
             const filtered = promotionStackable.redeemables.filter(item => {
@@ -159,21 +156,20 @@ const decrementQuantity = () => {
             promotionStackable.redeemables = filtered;
             summedValuesToCheckout.promoItems = filtered;
             promotionStackable.order.amount = (subtotal * 100).toFixed(2);
-            validatePromotion(promotionStackable).then(response => {
-                if (response.length === 0 && subtotal <= 0 || promotionStackable.redeemables.length === 0) {
+            return validatePromotion(promotionStackable).then(response => {
+                if (response.length === 0 && promotionStackable.redeemables.length === 0 || subtotal <= 0) {
                     promotionsWrapper.innerHTML = "<h4>Promotions:</h4>";
                     promotionStackable.redeemables = [];
                     allDiscountsSpan.innerHTML = "n/a";
                     grandTotalSpan.innerHTML = `$${subtotal}`;
-                    button.disabled = false;
+                    return;
                 }
                 const responsePromoTier = { id: response[0]?.id, object: response[0]?.object };
                 responsePromoTier.id !== undefined && promotionStackable.redeemables.unshift(responsePromoTier);
-                validateCode(promotionStackable).then(response => {
-                    button.disabled = false;
+                return validateCode(promotionStackable).then(response => {
                     const redeemablesArray = response.redeemables;
                     const promotions = redeemablesArray.reduce((sum, item) => {
-                        sum =+ item.order.total_discount_amount / 100;
+                        sum += item.order.total_applied_discount_amount / 100;
                         return sum;
                     }, 0);
                     summedValuesToCheckout.discount = promotions;
@@ -182,11 +178,11 @@ const decrementQuantity = () => {
                     allDiscountsSpan.innerHTML = `-$${(promotions).toFixed(2)}`;
                     grandTotalSpan.innerHTML = `$${(subtotal - promotions).toFixed(2)}`;
                     renderPromoVouchers(redeemablesArray);
-                }).catch(error => {
-                    promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
                 });
             }).catch(error => {
                 promotionHolder.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
+            }).finally(() => {
+                button.disabled = false;
             });
         });
     });
@@ -355,6 +351,7 @@ const validateVoucher = () => {
             voucherValue.value = "";
             promotionStackable.redeemables = [];
             allDiscountsSpan.innerHTML = "n/a";
+            grandTotalSpan.innerHTML = `${subtotal}`;
         });
     });
 };

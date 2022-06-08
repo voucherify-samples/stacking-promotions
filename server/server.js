@@ -33,6 +33,7 @@ app.listen(port, () => {
     console.log(`Hot beans app listening on port ${process.env.PORT}`);
 });
 
+
 app.post("/validate-promotion", (req, res) => {
     const stackableObject = req.body.promotionStackable;
 
@@ -58,7 +59,7 @@ app.post("/validate-stackable", (req, res) => {
         }
         return res.status(400).send({
             status : "error",
-            message: "Validate is not possible or voucher is not incorrect"
+            message: "Validate is not possible or voucher is incorrect"
         });
     }).catch(() => {
         return res.status(404).send({
@@ -85,7 +86,7 @@ app.post("/redeem-stackable", (req, res) => {
     }).catch(() => {
         res.status(400).send({
             status : "error",
-            message: "Valid redemption"
+            message: "Invalid redemption"
         });
     });
 });
