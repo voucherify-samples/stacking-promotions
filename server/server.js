@@ -33,94 +33,46 @@ app.listen(port, () => {
     console.log(`Hot beans app listening on port ${process.env.PORT}`);
 });
 
-const customer = {
-    "id": "test_customer_id_1"
-};
 
-const promotionTier = {
-    "object": "promotion_tier",
-    "id"    : "promo_0ONBGj3HnpivcjhrwZZt4zTG"
-};
+app.post("/validate-promotion", (req, res) => {
+    const stackableObject = req.body.promotionStackable;
 
-app.post("/remove-promo", (req, res) => {
-    const emptyArray = req.body.emptyArray;
-    promotionStackable.redeemables = emptyArray;
+    client.promotions.validate({ customer: stackableObject.customer, order: { amount: stackableObject.order.amount } }).then(response => {
+        return res.status(200).send(response.promotions);
+    }).catch(() => {
+        return res.status(404).send({
+            status : "error",
+            message: "Validate promotion is not possible"
+        });
+    });
 });
 
 app.post("/validate-stackable", (req, res) => {
-    const voucherCode = req.body.voucherCode;
-    const orderAmount = req.body.orderAmount * 100;
-    promotionStackable.order.amount = orderAmount;
+    const stackableObject = req.body.promotionStackable;
 
-    if (!voucherCode) {
-        return res.send({
-            message: "Voucher code is required"
+    client.validations.validateStackable(stackableObject).then(response => {
+        if (response.valid) {
+            return res.status(200).send({
+                redeemables: response.redeemables,
+                order      : response.order
+            });
+        }
+        return res.status(400).send({
+            status : "error",
+            message: "Validate is not possible or voucher is incorrect"
         });
-    }
-
-    const filtered = promotionStackable.redeemables.filter(item => {
-        return item.id !== promotionTier.id && item.id !== voucherCode;
+    }).catch(() => {
+        return res.status(404).send({
+            status : "error",
+            message: "Validate is not possible or you have used 5 possible promotions"
+        });
     });
-    promotionStackable.redeemables = filtered;
-
-    if (orderAmount < 4000 && voucherCode.length > 1) {
-        console.log("true");
-    } else {
-        promotionStackable.redeemables.unshift(promotionTier);
-    }
-
-    const validateStackable = () => {
-        client.validations.validateStackable(promotionStackable).then(response => {
-            if (response) {
-                return res.status(200).send({
-                    redeemables: response.redeemables,
-                    order      : response.order
-                });
-            } else {
-                res.status(400).send({
-                    status : "error",
-                    message: "Validate is not possible"
-                });
-            }
-        }).catch(() => {
-            return res.status(404).send({
-                status : "error",
-                message: "Validate is not possible or you have used 5 possible promotions"
-            });
-        });
-    };
-    if (voucherCode === " ") {
-        validateStackable();
-    } else {
-        client.validations.validate(voucherCode, { "customer": customer, "order": { amount: orderAmount } }).then(response => {
-            if (response.valid) {
-                promotionStackable.redeemables.push({
-                    "object": "voucher",
-                    "id"    : voucherCode
-                });
-                validateStackable();
-            } else {
-                return res.status(404).send({
-                    status : "error",
-                    message: "Voucher not found"
-                });
-            }
-        }).catch(() => {
-            return res.status(400).send({
-                status : "error",
-                message: "Voucher incorrect"
-            });
-        });
-    }
 });
 
 app.post("/redeem-stackable", (req, res) => {
-    const promoItemsArray = req.body.promoItemsArray;
-    const subtotalAmount = req.body.subtotalAmount;
-    promotionStackable.order.amount = subtotalAmount * 100;
-    promotionStackable.redeemables = promoItemsArray;
+    const stackableObject = req.body.promotionStackable;
 
-    client.redemptions.redeemStackable(promotionStackable).then(response => {
+    client.redemptions.redeemStackable(stackableObject).then(response => {
         if (response.parent_redemption.result === "SUCCESS") {
             return res.status(200).send({
                 status: "SUCCESS"
@@ -134,15 +86,7 @@ app.post("/redeem-stackable", (req, res) => {
     }).catch(() => {
         res.status(400).send({
             status : "error",
-            message: "Valid redemption"
+            message: "Invalid redemption"
         });
     });
 });
-
-const promotionStackable = {
-    order: {
-        amount: ""
-    },
-    "customer"   : customer,
-    "redeemables": []
-};
