@@ -6,10 +6,10 @@
 6. [Get support](#support)
 
 
-# Redeem promo codes with Voucherify <a id="voucherify-example"></a>
+# Stacking-promotions with Voucherify <a id="voucherify-example"></a>
 
 
-This sample shows you how to integrate with Voucherify [voucher redemption endpoint](https://docs.voucherify.io/reference/redeem-voucher).
+This sample shows you how to stack different types of promotions with Voucherify. This is achieved by integrating [validate stackable](https://docs.voucherify.io/reference/validate-stacked-discounts-1) and [redeem stackable](https://docs.voucherify.io/reference/redeem-stacked-discounts) endpoints. The stacking mechanism allows you to combine up to 5 promo codes or cart-level promotions with a single request.
 
 Validating and accepting promo codes in your checkout from scratch might be tricky — calculating discounted prices, error message handling, and localization are just a few things to think about when building a simple promo code redemption flow.
 
@@ -19,7 +19,7 @@ This example introduce online coffee shop and many vouchers in your dashboard ar
 
 ## How Voucherify works <a id="voucherify-works"></a>
 
-Note: while calling the [redemption endpoint](https://docs.voucherify.io/reference/redeem-voucher) is enough to satisfy a basic promo code flow, it's useful to add [validation](https://docs.voucherify.io/reference/validate-voucher) to the flow every time the promo code or cart changes. Validation performs 1-3 points but it doesn't marks the code as used one.
+Note: while calling the [redeem stackable endpoint](https://docs.voucherify.io/reference/redeem-stacked-discounts) is enough to satisfy a basic promo code flow, it's useful to add [validate stackable](https://docs.voucherify.io/reference/validate-stacked-discounts-1) to the flow every time the promo code or cart changes. Validation performs 1-3 points but it doesn't marks the code as used one.
 
 ![](https://github.com/voucherify-samples/voucher-code-redemption/blob/refactor-code/voucherify-integration.png)
 
@@ -32,7 +32,7 @@ Live demo on:<br>
 
 The demo is running with a [Sandbox project](https://docs.voucherify.io/docs/testing). Sandbox comes with several test vouchers you can apply in the checkout, e.g.:
 
-``FREE-SHIPPING`` - You find it in your [Vouchers](https://docs.voucherify.io/docs/vouchers-1) dashboard but if there is not Free Shipping Voucher you have to create code with free shipping on [Sandbox](https://docs.voucherify.io/docs/free-shipping-discount)
+``FREE-SHIPPING`` - You find it in your [Vouchers](https://docs.voucherify.io/docs/vouchers-1) dashboard but if there is not Free Shipping Voucher you have to create code with free shipping on [Sandbox](https://docs.voucherify.io/docs/free-shipping-discount).
 
 ``BLCKFRDY`` ``50%OFF`` and many other vouchers you find in your [Sandbox](https://docs.voucherify.io/docs/free-shipping-discount) > Vouchers.
 
@@ -41,8 +41,9 @@ Some codes have a [validation rules](https://docs.voucherify.io/docs/validation-
 The promo code box accepts Amount and Percentage [discount types](https://docs.voucherify.io/docs/vouchers-1#discount-coupons), more coming soon. 
 
 
-This sample calls two endpoints:
+This sample calls three endpoints:
 
+* [Validate promotion](https://docs.voucherify.io/reference/validate-promotions-1) - check if any [promotion tier](https://docs.voucherify.io/docs/promotion-tier) exist.
 * [Validate voucher code](https://docs.voucherify.io/reference/validate-voucher) — checks the code against [validation rules](https://docs.voucherify.io/docs/validation-rules) and returns calculated discounts.
 * [Redeem voucher code](https://docs.voucherify.io/reference/redeem-voucher) — runs validation and then marks the voucher as used. After click redemption button you should see message "Voucher redemeed" - that means your redemption process was successfull.
 
@@ -58,7 +59,7 @@ Follow the steps below to run locally.
 1. Clone repository.
 
 ```
-git clone https://github.com/voucherify-samples/voucher-code-redemption.git
+git clone https://github.com/voucherify-samples/stacking-promotions.git
 ```
 2. Create your [Voucherify account](http://app.voucherify.io/#/signup) (free tier, no credit card required).
 
