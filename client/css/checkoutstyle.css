@@ -128,9 +128,6 @@ label > select {
     -webkit-appearance: none;
 }
 
-#countries {
-    cursor: pointer;
-}
 
 .countries {
     position: relative;
@@ -296,7 +293,7 @@ label > select {
 }
 
 .discounts h5 {
-    margin: 0;
+    margin: 10px 0;
 }
 
 .discounts p {
@@ -312,36 +309,16 @@ label > select {
     margin-top: 30px;
 }
 
-.value-discounts p, .value-discounts p span {
+.value-discounts p {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.value-discounts p:nth-of-type(1) {
-    flex: 2;
-    justify-content: flex-start;
-}
-
-.value-discounts p:nth-of-type(2), .value-discounts p:nth-of-type(3) {
-    flex: 1;
-    justify-content: flex-end;
-}
-
-.value-discounts p:nth-of-type(2) span, .value-discounts p:nth-of-type(3) span {
-    cursor: pointer;
-}
-
-.value-discounts p span {
-    margin-right: 9px;
-}
-
 .coupons {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
-    gap: 30px 10px;
-    padding: 30px 0px;
+    gap: 0px 10px;
 }
 
 .coupon {
@@ -378,6 +355,7 @@ label > select {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    margin-top: 15px;
     padding-bottom: 30px;
     border-bottom: 1px solid #B1B8D0;
 }
