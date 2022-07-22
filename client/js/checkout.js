@@ -1,110 +1,51 @@
-window.addEventListener("load", () => {
-    const summedProducts = document.querySelector(".summed-products");
-    const discountValueSpan = document.querySelector(".discount-value span");
-    const subtotalValueSpan = document.querySelector(".subtotal span");
-    const allDiscountsValueSpan = document.querySelector(".all-discounts span");
-    const shippingValueSpan = document.querySelector(".shipping span");
-    const completeOrderButton = document.querySelector(".nav-buttons button");
-    const couponsWrapper = document.querySelector(".coupons");
+import {
+    redeemVoucherButton,
+    renderVoucherPropertiesFromStorage,
+    renderProductsFromStorage,
+    getCartAndVoucherFromSessionStorage,
+    filterAndReduceProducts
+} from "./lib.js";
 
-    document.getElementById("ephone").value = "voucherify@sample.io";
-    document.getElementById("fullname").value = "Jack Smith";
-    document.getElementById("company").value = "Voucherify";
-    document.getElementById("adress").value = "Magic Street 10";
-    document.getElementById("postal").value = "11-130";
-    document.getElementById("city").value = "Warsaw";
+const state = {
+    products         : [],
+    voucherProperties: {}
+};
 
-    const customer = {
-        "id": "test_customer_id_1"
-    };
+getCartAndVoucherFromSessionStorage().then(data => {
+    state.products = data.products;
+    state.voucherProperties = data.voucherProperties;
+    renderProductsFromStorage(state.products);
+    renderVoucherPropertiesFromStorage(state.voucherProperties, state.products);
+});
 
-    const promotionStackable = {
-        order: {
-            amount: null
-        },
-        customer   : customer,
-        redeemables: []
-    };
-
-    const innerSummedValues = (discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, shippingValueSpan, couponsWrapper) => {
-        const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-        couponsWrapper.innerHTML = `${values.promoItems.map((item, index) => {
-            return `<h5 class="coupon" index=${index}">${item.object}&nbsp;<span class="coupon-value">(-$${item.discount})</span></h5>`;
-        }).join("")}`;
-        values.promoItems.map(item => {
-            discountValueSpan.innerHTML = `-$${(values.discount).toFixed(2)}`;
-            allDiscountsValueSpan.innerHTML = `-$${(values.discount).toFixed(2)}`;
-            subtotalValueSpan.innerHTML = `$${values.subtotal}`;
-            shippingValueSpan.innerHTML = `${item.id === "FREE SHIPPING" ? item.discount : shippingValueSpan.innerHTML}`;
-        });
-        const grandTotalValueSpan = document.querySelector(".grand-total span");
-        grandTotalValueSpan.innerHTML = `$${(values.subtotal - values.discount + parseFloat(shippingValueSpan.innerHTML)).toFixed(2)}`;
-        shippingValueSpan.innerHTML = "$" + shippingValueSpan.innerHTML;
-    };
-
-    const innerSummedProducts = summedProducts => {
-        const products = JSON.parse(sessionStorage.getItem("products") || "[]");
-        summedProducts.innerHTML = `${products.map((item, index) => {
-            if (item.quantity === 0) {
-                return;
-            } else {
-                return `<div class="each-product" key=${index}>
-                    <img src="${item.src}" />
-                    <div class="each-product-name">
-                        <h6>${item.productName}</h6>
-                        <p>Quantity ${item.quantity}</p>
-                    </div>
-                    <span>$${item.price}</span>
-                </div>`;
-            }
-        }).join("")}`;
-    };
-
-    const values = JSON.parse(sessionStorage.getItem("values") || "[]");
-    promotionStackable.order.amount = values.subtotal * 100;
-    promotionStackable.redeemables = values.promoItems;
-
-    innerSummedValues(discountValueSpan, subtotalValueSpan, allDiscountsValueSpan, shippingValueSpan, couponsWrapper);
-    innerSummedProducts(summedProducts);
-
-
-    const redeemCode = async promotionStackable => {
-        const response = await fetch("/redeem-stackable", {
+const fetchRedeemVoucher = async (voucherProperties, products) => {
+    try {
+        const { items } = filterAndReduceProducts(products);
+        const response = await fetch("/redeem-voucher", {
             method : "POST",
             headers: {
-                //prettier-ignore
                 "Accept"      : "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ promotionStackable }),
+            body: JSON.stringify({ vouchersArray: voucherProperties.redeemables, items }),
         });
 
         const data = await response.json();
-        if (response.status === 200) {
-            return data;
+        if (data.status !== 200) {
+            throw new Error(data.message);
         }
-
-        if (response.status === 404) {
-            return Promise.reject(data);
+        if (data.status !== "success") {
+            throw new Error("Redeem voucher is not possible");
         }
+        redeemVoucherButton.innerHTML = `${data.message}`;
+        return data;
+    } catch (error) {
+        redeemVoucherButton.innerHTML = `${error.message}`;
+    }
+};
 
-        if (response.status === 400) {
-            return Promise.reject(data);
-        }
-    };
-
-    completeOrderButton.addEventListener("click", e => {
-        e.preventDefault();
-        redeemCode(promotionStackable)
-            .then(result => {
-                if (result.status === "SUCCESS") {
-                    setTimeout(() => {
-                        completeOrderButton.innerHTML = "Order completed";
-                    }, 1000);
-                }
-            })
-            .catch(error => {
-                completeOrderButton.innerHTML = `<h5 id="error-message">${error.message}</h5>`;
-            });
-    });
+redeemVoucherButton.addEventListener("click", e => {
+    e.preventDefault();
+    fetchRedeemVoucher(state.voucherProperties, state.products);
+    window.sessionStorage.clear();
 });
