@@ -40,6 +40,7 @@ Some codes have a [validation rules](https://docs.voucherify.io/docs/validation-
 
 The promo code box accepts Amount and Percentage [discount types](https://docs.voucherify.io/docs/vouchers-1#discount-coupons), more coming soon. 
 
+
 This sample calls two endpoints:
 
 * [Validate voucher code](https://docs.voucherify.io/reference/validate-voucher) — checks the code against [validation rules](https://docs.voucherify.io/docs/validation-rules) and returns calculated discounts.
